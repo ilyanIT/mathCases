@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Math Buddies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fff7e8; --ink:#2d2a4a; --muted:#6b6790; --card:#ffffff;
+    --add:#ff7a59; --sub:#2fb4c9; --mul:#8e6cf0; --div:#2bb673; --mix:#f5a700;
+    --ok:#2bb673; --bad:#ef5b5b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; color:var(--ink);
+    font-family:'Baloo 2',system-ui,'Segoe UI',sans-serif;
+    background:var(--bg);
+    background-image:radial-gradient(#ffe2b8 2px,transparent 2px);
+    background-size:28px 28px;
+  }
+  button{font-family:inherit;cursor:pointer;border:none;color:inherit}
+  .wrap{max-width:760px;margin:0 auto;padding:16px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+  .logo{font-size:clamp(26px,6vw,38px);font-weight:800;margin:0;letter-spacing:.5px}
+  .logo span:nth-child(1){color:var(--add)} .logo span:nth-child(2){color:var(--sub)}
+  .logo span:nth-child(3){color:var(--mul)} .logo span:nth-child(4){color:var(--div)}
+  .icon-btn{background:var(--card);border-radius:14px;padding:8px 12px;font-size:22px;box-shadow:0 4px 0 #e9dcc4}
+  .icon-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #e9dcc4}
+
+  .screen{display:none;animation:pop .3s ease}
+  .screen.active{display:block}
+  @keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+
+  .hero{display:flex;align-items:center;gap:14px;margin:8px 0 18px}
+  .mascot{font-size:64px;animation:bob 2.4s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-6px) rotate(-4deg)}}
+  .bubble{background:var(--card);border-radius:20px;padding:12px 16px;font-size:19px;font-weight:600;
+    box-shadow:0 4px 0 #e9dcc4;position:relative;flex:1}
+  .bubble::before{content:"";position:absolute;left:-10px;top:50%;margin-top:-10px;border:10px solid transparent;border-right-color:var(--card);border-left:0}
+
+  h2{font-size:20px;margin:18px 0 10px;color:var(--muted)}
+  .ops{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+  .op-card{background:var(--c);color:#fff;border-radius:22px;padding:14px 8px;display:flex;flex-direction:column;
+    align-items:center;font-size:18px;font-weight:700;box-shadow:0 6px 0 rgba(0,0,0,.18);transition:transform .1s;outline:4px solid transparent}
+  .op-card .sym{font-size:46px;line-height:1.1;font-weight:800}
+  .op-card:hover{transform:translateY(-2px)}
+  .op-card.selected{outline-color:var(--ink);transform:scale(1.04)}
+  .levels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .level{background:var(--card);border-radius:18px;padding:10px 6px;font-size:18px;font-weight:700;box-shadow:0 4px 0 #e9dcc4;outline:3px solid transparent}
+  .level small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+  .level.selected{outline-color:var(--mul);background:#f1ecff}
+  .big-btn{display:block;width:100%;margin:22px 0 10px;padding:16px;font-size:26px;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,#ff7a59,#f5a700);border-radius:22px;box-shadow:0 6px 0 #c9631b}
+  .big-btn:active{transform:translateY(4px);box-shadow:0 2px 0 #c9631b}
+  .link-btn{display:block;margin:0 auto;background:none;font-size:18px;font-weight:700;color:var(--mul);text-decoration:underline}
+
+  /* game */
+  .game-top{display:flex;align-items:center;gap:10px}
+  .progress{flex:1;height:18px;background:#f3e6cf;border-radius:99px;overflow:hidden}
+  #bar{height:100%;width:0;background:linear-gradient(90deg,#2bb673,#8fdc5b);border-radius:99px;transition:width .4s}
+  .pill{background:var(--card);border-radius:99px;padding:4px 14px;font-weight:700;font-size:18px;box-shadow:0 3px 0 #e9dcc4;white-space:nowrap}
+  .stats{display:flex;gap:10px;justify-content:center;margin:12px 0}
+  .problem-card{background:var(--card);border-radius:28px;padding:20px 14px;text-align:center;box-shadow:0 8px 0 #e9dcc4;border-top:10px solid var(--c,#ccc)}
+  .problem{font-size:clamp(46px,13vw,88px);font-weight:800;line-height:1.1;display:flex;justify-content:center;align-items:center;gap:.25em;flex-wrap:wrap}
+  .problem .op{color:var(--c)}
+  .answer{min-width:1.6em;padding:0 .2em;border-radius:18px;background:#f6f1ff;color:var(--mul);border:4px dashed #cbbdf7}
+  .answer.right{background:#e3f7ec;color:var(--ok);border:4px solid var(--ok)}
+  .answer.wrong{background:#fde8e8;color:var(--bad);border:4px solid var(--bad)}
+  .feedback{min-height:34px;font-size:22px;font-weight:700;margin-top:8px}
+  .feedback.ok{color:var(--ok)} .feedback.bad{color:var(--bad)}
+  .hint{display:none;margin-top:10px;background:#fff9e6;border:3px dashed #f5c55a;border-radius:18px;padding:10px;font-size:18px}
+  .hint.show{display:block}
+  .hint p{margin:4px 0}
+  .objs{font-size:28px;line-height:1.3;display:flex;flex-wrap:wrap;justify-content:center;gap:2px;align-items:center}
+  .objs .b{filter:hue-rotate(160deg)}
+  .objs .gone{opacity:.25;position:relative}
+  .objs .gone::after{content:"✖";position:absolute;left:0;right:0;color:var(--bad);opacity:1}
+  .objs .plus{font-weight:800;margin:0 8px;color:var(--muted)}
+  .groups{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+  .group{border:3px solid #cbbdf7;border-radius:14px;padding:2px 6px;font-size:22px;background:#faf8ff}
+  .shake{animation:shake .4s}
+  @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+  .key{background:var(--card);border-radius:18px;padding:12px 0;font-size:30px;font-weight:800;box-shadow:0 5px 0 #e9dcc4}
+  .key:active{transform:translateY(4px);box-shadow:0 1px 0 #e9dcc4}
+  .key.check{background:var(--ok);color:#fff;box-shadow:0 5px 0 #1d8a55}
+  .key.del{background:#ffe3dc;color:var(--bad)}
+  .actions{display:flex;justify-content:center;margin-top:12px}
+  .hint-btn{background:#fff3cc;border-radius:16px;padding:8px 18px;font-size:20px;font-weight:700;box-shadow:0 4px 0 #f0d78a}
+
+  /* results */
+  .result-card{background:var(--card);border-radius:28px;padding:24px 16px;text-align:center;box-shadow:0 8px 0 #e9dcc4}
+  .res-stars{font-size:64px;letter-spacing:6px}
+  .res-stars .dim{filter:grayscale(1);opacity:.3}
+  .result-card h2{font-size:32px;color:var(--ink);margin:6px 0}
+  .review{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0}
+  .chip{border-radius:12px;padding:4px 10px;font-weight:700;font-size:17px}
+  .chip.ok{background:#e3f7ec;color:#1d8a55}
+  .chip.miss{background:#fde8e8;color:#c03b3b}
+  .row-btns{display:flex;gap:10px}
+  .row-btns .big-btn{margin:10px 0 0}
+  .row-btns .alt{background:linear-gradient(135deg,#8e6cf0,#2fb4c9);box-shadow:0 6px 0 #5a43a8}
+
+  /* learn */
+  .table-wrap{overflow-x:auto;background:var(--card);border-radius:22px;padding:10px;box-shadow:0 6px 0 #e9dcc4}
+  table{border-collapse:separate;border-spacing:4px;margin:0 auto}
+  td,th{width:42px;height:38px;text-align:center;font-weight:700;font-size:17px;border-radius:10px}
+  th{background:#efe9ff;color:var(--mul)}
+  td{background:#faf6ee;cursor:pointer}
+  td.hl{background:#ffe9a8}
+  td.pick{background:var(--mul);color:#fff;transform:scale(1.12)}
+  .learn-out{text-align:center;font-size:clamp(30px,8vw,48px);font-weight:800;min-height:64px;margin:10px 0}
+  .learn-out small{display:block;font-size:17px;font-weight:600;color:var(--muted)}
+
+  .confetti{position:fixed;top:-40px;font-size:28px;pointer-events:none;z-index:99;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+
+  @media (max-width:420px){
+    .levels{grid-template-columns:1fr}
+    td,th{width:30px;height:30px;font-size:14px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="logo"><span>Math</span> <span>Bud</span><span>di</span><span>es</span></h1>
+    <button class="icon-btn" id="soundBtn" title="Sound on/off">🔊</button>
+  </header>
+
+  <!-- HOME -->
+  <section id="home" class="screen active">
+    <div class="hero">
+      <div class="mascot">🦉</div>
+      <div class="bubble" id="bubble">Hi! I'm Ollie the owl. What do you want to practice today?</div>
+    </div>
+    <h2>1. Choose an operation</h2>
+    <div class="ops" id="ops"></div>
+    <h2>2. Choose a level</h2>
+    <div class="levels" id="levels">
+      <button class="level selected" data-level="easy">🐣 Easy<small>Numbers up to 10</small></button>
+      <button class="level" data-level="medium">🐥 Medium<small>Up to 20 · tables to 10</small></button>
+      <button class="level" data-level="hard">🦅 Hard<small>Up to 100 · tables to 12</small></button>
+    </div>
+    <button class="big-btn" id="startBtn">Let's go! 🚀</button>
+    <button class="link-btn" id="learnBtn">📚 Times table helper</button>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="screen">
+    <div class="game-top">
+      <button class="icon-btn" id="homeBtn" title="Home">🏠</button>
+      <div class="progress"><div id="bar"></div></div>
+      <div class="pill" id="qnum">1/10</div>
+    </div>
+    <div class="stats">
+      <span class="pill">⭐ <b id="score">0</b></span>
+      <span class="pill">🔥 <b id="streak">0</b></span>
+    </div>
+    <div class="problem-card" id="card">
+      <div class="problem">
+        <span id="pa"></span><span class="op" id="pop"></span><span id="pb"></span><span>=</span><span class="answer" id="answer">?</span>
+      </div>
+      <div class="feedback" id="feedback"></div>
+      <div class="hint" id="hint"></div>
+    </div>
+    <div class="pad" id="pad"></div>
+    <div class="actions"><button class="hint-btn" id="hintBtn">💡 Show me a hint</button></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="screen">
+    <div class="result-card">
+      <div class="res-stars" id="resStars"></div>
+      <h2 id="resTitle"></h2>
+      <p id="resText" style="font-size:20px;margin:4px 0"></p>
+      <div class="review" id="review"></div>
+      <div class="row-btns">
+        <button class="big-btn" id="againBtn">Play again 🔁</button>
+        <button class="big-btn alt" id="homeBtn2">Home 🏠</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEARN -->
+  <section id="learn" class="screen">
+    <div class="game-top" style="margin-bottom:12px">
+      <button class="icon-btn" id="homeBtn3" title="Home">🏠</button>
+      <div class="bubble">Tap any square to see the multiplication!</div>
+    </div>
+    <div class="learn-out" id="learnOut">? × ? = ?<small>Tap a number in the table</small></div>
+    <div class="table-wrap"><table id="ttable"></table></div>
+  </section>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+const OPS = {
+  add: { sym: '+', name: 'Addition',       color: 'var(--add)', emoji: '🍎', say: 'Addition! Let\'s put numbers together. 🍎' },
+  sub: { sym: '−', name: 'Subtraction',    color: 'var(--sub)', emoji: '🎈', say: 'Subtraction! Let\'s take some away. 🎈' },
+  mul: { sym: '×', name: 'Multiplication', color: 'var(--mul)', emoji: '⭐', say: 'Multiplication! Groups of things. ⭐' },
+  div: { sym: '÷', name: 'Division',       color: 'var(--div)', emoji: '🍪', say: 'Division! Let\'s share fairly. 🍪' },
+  mix: { sym: '🎲', name: 'Mix it up',     color: 'var(--mix)', emoji: '',   say: 'A bit of everything! You\'re brave! 🎲' },
+};
+const PRAISE = ['Great job! 🎉', 'Awesome! 🌟', 'You\'re a math star! ⭐', 'Super! 🚀', 'Perfect! 👏', 'Brilliant! 🧠', 'Yes! You got it! 🥳'];
+const TOTAL = 10;
+
+const st = { op: null, level: 'easy', qs: [], i: 0, score: 0, streak: 0, best: 0, tries: 0, typed: '', locked: false, results: [] };
+
+/* ---------- Sound ---------- */
+let soundOn = true, actx;
+try { soundOn = localStorage.getItem('mb-sound') !== 'off'; } catch (e) {}
+function updateSoundBtn() { $('#soundBtn').textContent = soundOn ? '🔊' : '🔇'; }
+updateSoundBtn();
+$('#soundBtn').onclick = () => {
+  soundOn = !soundOn; updateSoundBtn();
+  try { localStorage.setItem('mb-sound', soundOn ? 'on' : 'off'); } catch (e) {}
+};
+function tone(freqs) {
+  if (!soundOn) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    freqs.forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      const t = actx.currentTime + i * 0.12;
+      o.type = 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.25);
+      o.connect(g).connect(actx.destination);
+      o.start(t); o.stop(t + 0.3);
+    });
+  } catch (e) {}
+}
+const soundGood = () => tone([523, 659, 784]);
+const soundBad = () => tone([300, 220]);
+const soundClick = () => tone([660]);
+
+/* ---------- Screens ---------- */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Home ---------- */
+const opsEl = $('#ops');
+Object.entries(OPS).forEach(([key, o]) => {
+  const b = document.createElement('button');
+  b.className = 'op-card';
+  b.style.setProperty('--c', o.color);
+  b.dataset.op = key;
+  b.innerHTML = `<span class="sym">${o.sym}</span><span>${o.name}</span>`;
+  b.onclick = () => {
+    st.op = key;
+    opsEl.querySelectorAll('.op-card').forEach(c => c.classList.toggle('selected', c === b));
+    $('#bubble').textContent = o.say;
+    soundClick();
+  };
+  opsEl.appendChild(b);
+});
+document.querySelectorAll('.level').forEach(b => b.onclick = () => {
+  st.level = b.dataset.level;
+  document.querySelectorAll('.level').forEach(x => x.classList.toggle('selected', x === b));
+  soundClick();
+});
+$('#startBtn').onclick = startGame;
+$('#learnBtn').onclick = () => show('learn');
+[$('#homeBtn'), $('#homeBtn2'), $('#homeBtn3')].forEach(b => b.onclick = () => show('home'));
+$('#againBtn').onclick = startGame;
+
+/* ---------- Questions ---------- */
+function makeQ(op, level) {
+  if (op === 'mix') op = pick(['add', 'sub', 'mul', 'div']);
+  let a, b, ans;
+  if (op === 'add') {
+    if (level === 'easy')        { a = rand(1, 9);   b = rand(1, 10 - a); }
+    else if (level === 'medium') { a = rand(3, 17);  b = rand(1, 20 - a); }
+    else                         { a = rand(10, 99); b = rand(10, 99); }
+    ans = a + b;
+  } else if (op === 'sub') {
+    if (level === 'easy')        { a = rand(2, 10);  b = rand(1, a); }
+    else if (level === 'medium') { a = rand(10, 20); b = rand(1, a); }
+    else                         { a = rand(20, 100); b = rand(5, a); }
+    ans = a - b;
+  } else if (op === 'mul') {
+    const [lo, hi] = level === 'easy' ? [1, 5] : level === 'medium' ? [2, 10] : [2, 12];
+    a = rand(lo, hi); b = rand(level === 'easy' ? 1 : 1, hi);
+    ans = a * b;
+  } else { // div: build from a multiplication so the answer is always a whole number
+    const [lo, hi] = level === 'easy' ? [1, 5] : level === 'medium' ? [2, 10] : [2, 12];
+    b = rand(lo, hi); ans = rand(level === 'hard' ? 2 : 1, hi); a = b * ans;
+  }
+  return { op, a, b, ans };
+}
+function buildSet() {
+  const seen = new Set(), out = [];
+  let guard = 0;
+  while (out.length < TOTAL && guard++ < 500) {
+    const q = makeQ(st.op, st.level), k = q.a + q.op + q.b;
+    if (seen.has(k)) continue;
+    seen.add(k); out.push(q);
+  }
+  while (out.length < TOTAL) out.push(makeQ(st.op, st.level));
+  return out;
+}
+
+/* ---------- Hints ---------- */
+const items = (n, e, cls = '') => Array.from({ length: n }, () => `<span class="${cls}">${e}</span>`).join('');
+function hintHTML(q) {
+  const E = OPS[q.op].emoji, { a, b } = q;
+  if (q.op === 'add') {
+    if (a + b <= 20) return `<p>Count all the ${E}!</p><div class="objs">${items(a, E)}<span class="plus">+</span>${items(b, E, 'b')}</div>`;
+    const ta = Math.floor(a / 10) * 10, tb = Math.floor(b / 10) * 10;
+    return `<p>Split into tens and ones:</p><p>Tens: ${ta} + ${tb} = <b>${ta + tb}</b><br>Ones: ${a % 10} + ${b % 10} = <b>${a % 10 + b % 10}</b></p><p>Now add those two together!</p>`;
+  }
+  if (q.op === 'sub') {
+    if (a <= 20) return `<p>Start with ${a} ${E}. Take away ${b}. How many are left?</p><div class="objs">${items(a - b, E)}${items(b, E, 'gone')}</div>`;
+    const tb = Math.floor(b / 10) * 10, ob = b % 10;
+    if (tb === 0) return `<p>Count back ${b} from ${a}.</p>`;
+    return `<p>Take away the tens first: ${a} − ${tb} = <b>${a - tb}</b></p><p>Then take away ${ob} more.</p>`;
+  }
+  if (q.op === 'mul') {
+    if (a * b <= 40) return `<p>${a} group${a > 1 ? 's' : ''} of ${b}. Count them all!</p><div class="groups">${Array.from({ length: a }, () => `<div class="group">${items(b, E)}</div>`).join('')}</div>`;
+    return `<p>${a} × ${b} means adding ${b}, ${a} times.</p><p>Skip-count by ${b}: ${b}, ${b * 2}, ${b * 3}, … (${a} jumps)</p>`;
+  }
+  if (a <= 40) return `<p>Share ${a} ${E} equally onto ${b} plate${b > 1 ? 's' : ''}. How many on each plate?</p><div class="objs">${items(a, E)}</div><p>Think: ${b} × ? = ${a}</p>`;
+  return `<p>Think: ${b} × ? = ${a}</p><p>Skip-count by ${b}: ${b}, ${b * 2}, ${b * 3}, … until you reach ${a}. How many jumps?</p>`;
+}
+function showHint() {
+  const h = $('#hint');
+  h.innerHTML = hintHTML(st.qs[st.i]);
+  h.classList.add('show');
+}
+
+/* ---------- Game ---------- */
+function startGame() {
+  if (!st.op) {
+    $('#bubble').textContent = 'Oops! First tap an operation above. 👆';
+    opsEl.classList.remove('shake'); void opsEl.offsetWidth; opsEl.classList.add('shake');
+    soundBad();
+    return;
+  }
+  Object.assign(st, { qs: buildSet(), i: 0, score: 0, streak: 0, best: 0, results: [] });
+  show('game');
+  renderQ();
+}
+function renderQ() {
+  const q = st.qs[st.i], o = OPS[q.op];
+  $('#card').style.setProperty('--c', o.color);
+  $('#pa').textContent = q.a;
+  $('#pop').textContent = o.sym;
+  $('#pb').textContent = q.b;
+  st.typed = ''; st.tries = 0; st.locked = false;
+  const ans = $('#answer'); ans.className = 'answer'; ans.textContent = '?';
+  $('#feedback').className = 'feedback'; $('#feedback').textContent = '';
+  $('#hint').className = 'hint'; $('#hint').innerHTML = '';
+  $('#qnum').textContent = `${st.i + 1}/${TOTAL}`;
+  $('#bar').style.width = (st.i / TOTAL * 100) + '%';
+  $('#score').textContent = st.score;
+  $('#streak').textContent = st.streak;
+}
+function updateAnswer() {
+  const ans = $('#answer');
+  ans.className = 'answer';
+  ans.textContent = st.typed || '?';
+}
+function typeDigit(d) {
+  if (st.locked || st.typed.length >= 4) return;
+  st.typed = (st.typed === '0' ? '' : st.typed) + d;
+  updateAnswer();
+}
+function backspace() {
+  if (st.locked) return;
+  st.typed = st.typed.slice(0, -1);
+  updateAnswer();
+}
+function check() {
+  if (st.locked || st.typed === '') return;
+  const q = st.qs[st.i], v = Number(st.typed), ans = $('#answer'), fb = $('#feedback');
+  if (v === q.ans) {
+    st.locked = true;
+    st.score++; st.streak++; st.best = Math.max(st.best, st.streak);
+    ans.className = 'answer right';
+    fb.className = 'feedback ok';
+    fb.textContent = st.streak >= 3 ? `${pick(PRAISE)} ${st.streak} in a row!` : pick(PRAISE);
+    st.results.push({ q, ok: true });
+    $('#score').textContent = st.score; $('#streak').textContent = st.streak;
+    soundGood(); confetti();
+    setTimeout(next, 1300);
+  } else {
+    st.tries++;
+    soundBad();
+    const card = $('#card'); card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    ans.className = 'answer wrong';
+    if (st.tries < 2) {
+      fb.className = 'feedback bad';
+      fb.textContent = 'Not quite — try again! 💪 Here is a hint:';
+      showHint();
+      st.typed = '';
+      setTimeout(() => { if (!st.locked) updateAnswer(); }, 700);
+    } else {
+      st.locked = true; st.streak = 0;
+      ans.textContent = q.ans;
+      fb.className = 'feedback bad';
+      fb.textContent = `The answer is ${q.ans}. You'll get the next one! 🌈`;
+      st.results.push({ q, ok: false, given: v });
+      $('#streak').textContent = 0;
+      setTimeout(next, 2600);
+    }
+  }
+}
+function next() {
+  st.i++;
+  if (st.i >= TOTAL) finish(); else renderQ();
+}
+function finish() {
+  $('#bar').style.width = '100%';
+  const s = st.score, stars = s >= 9 ? 3 : s >= 6 ? 2 : s >= 3 ? 1 : 0;
+  $('#resStars').innerHTML = [0, 1, 2].map(i => `<span class="${i < stars ? '' : 'dim'}">⭐</span>`).join('');
+  $('#resTitle').textContent = ['Keep practicing! 🌱', 'Good try! 👍', 'Great work! 🎉', 'Math champion! 🏆'][stars];
+  $('#resText').textContent = `You got ${s} out of ${TOTAL} right. Best streak: ${st.best} 🔥`;
+  $('#review').innerHTML = st.results.map(({ q, ok, given }) =>
+    `<span class="chip ${ok ? 'ok' : 'miss'}">${ok ? '✔' : '✘'} ${q.a} ${OPS[q.op].sym} ${q.b} = ${q.ans}${ok ? '' : ` (you said ${given})`}</span>`
+  ).join('');
+  show('result');
+  if (stars >= 2) { soundGood(); confetti(); setTimeout(confetti, 400); }
+}
+
+/* number pad */
+const pad = $('#pad');
+['1', '2', '3', '4', '5', '6', '7', '8', '9', 'del', '0', 'ok'].forEach(k => {
+  const b = document.createElement('button');
+  b.className = 'key' + (k === 'ok' ? ' check' : k === 'del' ? ' del' : '');
+  b.textContent = k === 'ok' ? '✔' : k === 'del' ? '⌫' : k;
+  b.onclick = () => k === 'ok' ? check() : k === 'del' ? backspace() : typeDigit(k);
+  pad.appendChild(b);
+});
+$('#hintBtn').onclick = showHint;
+document.addEventListener('keydown', e => {
+  if (!$('#game').classList.contains('active')) return;
+  if (/^[0-9]$/.test(e.key)) typeDigit(e.key);
+  else if (e.key === 'Backspace') backspace();
+  else if (e.key === 'Enter') check();
+});
+
+/* ---------- Confetti ---------- */
+function confetti() {
+  for (let i = 0; i < 18; i++) {
+    const s = document.createElement('span');
+    s.className = 'confetti';
+    s.textContent = pick(['🎉', '⭐', '✨', '🎈', '🌟', '💜']);
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.animationDuration = (1 + Math.random() * 1.2) + 's';
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 2400);
+  }
+}
+
+/* ---------- Times table helper ---------- */
+const tt = $('#ttable');
+let html = '<tr><th>×</th>' + Array.from({ length: 10 }, (_, i) => `<th>${i + 1}</th>`).join('') + '</tr>';
+for (let r = 1; r <= 10; r++) {
+  html += `<tr><th>${r}</th>`;
+  for (let c = 1; c <= 10; c++) html += `<td data-r="${r}" data-c="${c}">${r * c}</td>`;
+  html += '</tr>';
+}
+tt.innerHTML = html;
+tt.addEventListener('click', e => {
+  const td = e.target.closest('td'); if (!td) return;
+  const R = +td.dataset.r, C = +td.dataset.c;
+  tt.querySelectorAll('td').forEach(x => {
+    const r = +x.dataset.r, c = +x.dataset.c;
+    x.className = (r === R && c <= C) || (c === C && r <= R) ? 'hl' : '';
+  });
+  td.className = 'pick';
+  $('#learnOut').innerHTML = `${R} × ${C} = ${R * C}<small>${R} group${R > 1 ? 's' : ''} of ${C} makes ${R * C}</small>`;
+  soundClick();
+});
+</script>
+</body>
+</html>
