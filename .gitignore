@@ -1,2 +1,3 @@
 claude.md
 *.exe
+__pycache__/
